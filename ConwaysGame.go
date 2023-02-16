@@ -25,10 +25,9 @@ var (
 	pause = false
 )
 
-// TODO: implement mouse-handler, implement drawing on board, fix issue with bord is mirrored in the middle
 const (
-	width              = 700
-	height             = 700
+	width              = 900
+	height             = 900
 	vertexShaderSource = `
     #version 460
     layout (location = 0) in vec3 vp;
@@ -41,13 +40,13 @@ const (
     #version 450
     out vec4 frag_color;
     void main() {
-        frag_color = vec4(1, 1, 1, 1);
+        frag_color = vec4(0.51, 0.21, 0.71, 1);
     }
 ` + "\x00"
 
-	rows      = 41
-	columns   = 41
-	threshold = 0.15
+	rows      = 50
+	columns   = 50
+	threshold = 0.0
 	fps       = 20
 )
 
@@ -67,6 +66,7 @@ func main() {
 
 	defer glfw.Terminate()
 	program := initOpenGL()
+
 	keyboardHandler, callback := Input.NewKeyHandler()
 	window.SetKeyCallback(callback)
 	mouseHandler, mouseCallback := Input.NewMouseHandler()
@@ -75,15 +75,19 @@ func main() {
 	cells := makeCells()
 	for !window.ShouldClose() {
 		keyboardHandler.Update()
+		mouseHandler.Update()
 		if keyboardHandler.SpacePressed() {
 			pause = !pause
+			drawtext()
 		}
 		if mouseHandler.Mouse1Pressed() {
 			x, y := window.GetCursorPos()
-			c := cells[int(x/(width/columns))][int(y/(height/rows))]
-			fmt.Println(c.alive)
+			c := cells[int(x/(width/columns))][int(rows-y/(height/rows))]
+			c.alive = !c.alive
+			c.aliveNext = c.alive
+			c.draw()
 		}
-		mouseHandler.Update()
+
 		t := time.Now()
 		if !pause {
 			for x := range cells {
@@ -97,7 +101,9 @@ func main() {
 	}
 
 }
+func drawtext() {
 
+}
 func initGlfw() *glfw.Window {
 	if err := glfw.Init(); err != nil {
 		panic(err)
@@ -108,7 +114,6 @@ func initGlfw() *glfw.Window {
 	glfw.WindowHint(glfw.ContextVersionMinor, 1)
 	glfw.WindowHint(glfw.OpenGLProfile, glfw.OpenGLCoreProfile)
 	glfw.WindowHint(glfw.OpenGLForwardCompatible, glfw.True)
-
 	window, err := glfw.CreateWindow(width, height, "Conway's Game of Life", nil, nil)
 	if err != nil {
 		panic(err)
